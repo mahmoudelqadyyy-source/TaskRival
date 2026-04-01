@@ -1,10 +1,34 @@
+import { useEffect } from 'react';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { BottomNav } from './BottomNav';
 
 export function Layout() {
   const user = useStore((state) => state.user);
+  const addNotification = useStore((state) => state.addNotification);
+  const language = useStore((state) => state.language);
   const location = useLocation();
+
+  useEffect(() => {
+    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = language;
+  }, [language]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    // Simulate a smart notification arriving after 30 seconds
+    const timer = setTimeout(() => {
+      addNotification({
+        title: 'Smart Suggestion 💡',
+        message: 'You usually complete tasks around this time. Want to start a 25-min focus session?',
+        type: 'system',
+        actionUrl: '/focus'
+      });
+    }, 30000);
+
+    return () => clearTimeout(timer);
+  }, [user, addNotification]);
 
   if (!user) {
     return <Navigate to="/onboarding" state={{ from: location }} replace />;

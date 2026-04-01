@@ -1,14 +1,19 @@
 import { NavLink } from 'react-router-dom';
 import { Home, CheckSquare, Trophy, Users, User } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useStore } from '../store/useStore';
+import { translations } from '../lib/i18n';
 
 export function BottomNav() {
+  const language = useStore(state => state.language);
+  const t = translations[language];
+
   const navItems = [
-    { to: '/', icon: Home, label: 'Home' },
-    { to: '/tasks', icon: CheckSquare, label: 'Tasks' },
-    { to: '/challenges', icon: Trophy, label: 'Challenges' },
-    { to: '/leaderboard', icon: Users, label: 'Friends' },
-    { to: '/profile', icon: User, label: 'Profile' },
+    { to: '/', icon: Home, label: t.navHome },
+    { to: '/tasks', icon: CheckSquare, label: t.navTasks },
+    { to: '/challenges', icon: Trophy, label: t.navChallenges },
+    { to: '/leaderboard', icon: Users, label: t.friends },
+    { to: '/profile', icon: User, label: t.navProfile },
   ];
 
   return (

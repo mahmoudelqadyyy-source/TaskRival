@@ -1,15 +1,23 @@
 import { useStore } from '../store/useStore';
 import { motion } from 'motion/react';
-import { CheckCircle2, Circle, Flame, Trophy, Plus, Play, ChevronRight } from 'lucide-react';
+import { CheckCircle2, Circle, Flame, Trophy, Plus, Play, ChevronRight, Languages, Camera, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { isSameDay } from 'date-fns';
+import { NotificationCenter } from '../components/NotificationCenter';
+import { translations } from '../lib/i18n';
 
 export function Dashboard() {
   const user = useStore(state => state.user);
   const tasks = useStore(state => state.tasks);
   const friends = useStore(state => state.friends);
+  const activeItems = useStore(state => state.activeItems);
   const toggleTask = useStore(state => state.toggleTask);
+  const language = useStore(state => state.language);
+  const setLanguage = useStore(state => state.setLanguage);
+  const updateAvatar = useStore(state => state.updateAvatar);
   const navigate = useNavigate();
+
+  const t = translations[language];
 
   const todayTasks = tasks.filter(t => isSameDay(new Date(t.date), new Date()));
   const completedTasks = todayTasks.filter(t => t.completed);
@@ -20,15 +28,46 @@ export function Dashboard() {
 
   if (!user) return null;
 
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'ar' : 'en');
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        updateAvatar(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className="p-6 pb-24 min-h-screen bg-slate-50 dark:bg-slate-950">
       <header className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Hello, {user.name.split(' ')[0]}!</h1>
-          <p className="text-slate-500 dark:text-slate-400">Ready to crush your goals?</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t.hello}, {user.name.split(' ')[0]}!</h1>
+          <p className="text-slate-500 dark:text-slate-400">{t.readyToCrush}</p>
         </div>
-        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-indigo-100 dark:border-indigo-900/50 shadow-sm">
-          <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={toggleLanguage}
+            className="p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+            title="Toggle Language"
+          >
+            <Languages className="w-6 h-6" />
+          </button>
+          <NotificationCenter />
+          <div className="relative group cursor-pointer">
+            <label className="cursor-pointer block w-12 h-12 rounded-full overflow-hidden border-2 border-indigo-100 dark:border-indigo-900/50 shadow-sm relative">
+              <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+              <img src={user.avatar} alt="Profile" className="w-full h-full object-cover group-hover:opacity-75 transition-opacity" referrerPolicy="no-referrer" />
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
+                <Camera className="w-5 h-5 text-white" />
+              </div>
+            </label>
+          </div>
         </div>
       </header>
 
@@ -40,22 +79,31 @@ export function Dashboard() {
           className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-5 text-white shadow-lg shadow-indigo-500/30 relative overflow-hidden"
         >
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl" />
-          <div className="flex items-center gap-2 mb-2">
-            <Flame className="w-5 h-5 text-amber-300" />
-            <span className="font-medium opacity-90">Streak</span>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Flame className="w-5 h-5 text-amber-300" />
+              <span className="font-medium opacity-90">{t.streak}</span>
+            </div>
+            {activeItems.includes('i2') && (
+              <Shield className="w-4 h-4 text-blue-200" title="Streak Freeze Active" />
+            )}
           </div>
-          <div className="text-3xl font-bold">{user.streak} <span className="text-lg font-medium opacity-80">days</span></div>
+          <div className="text-3xl font-bold">{user.streak} <span className="text-lg font-medium opacity-80">{t.days}</span></div>
         </motion.div>
 
         <motion.div 
+          onClick={() => navigate('/store')}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm"
+          className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors group"
         >
-          <div className="flex items-center gap-2 mb-2">
-            <Trophy className="w-5 h-5 text-emerald-500" />
-            <span className="font-medium text-slate-500 dark:text-slate-400">Points</span>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-emerald-500" />
+              <span className="font-medium text-slate-500 dark:text-slate-400">{t.points}</span>
+            </div>
+            <ChevronRight className={`w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-colors ${language === 'ar' ? 'rotate-180' : ''}`} />
           </div>
           <div className="text-3xl font-bold text-slate-900 dark:text-white">{user.points}</div>
         </motion.div>
@@ -86,9 +134,9 @@ export function Dashboard() {
           </div>
         </div>
         <div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Today's Progress</h3>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{t.todaysProgress}</h3>
           <p className="text-slate-500 dark:text-slate-400 text-sm">
-            {completedTasks.length} of {todayTasks.length} tasks completed
+            {completedTasks.length} {t.of} {todayTasks.length} {t.tasksCompleted}
           </p>
           <div className="mt-3 flex gap-2">
             <button onClick={() => navigate('/tasks')} className="p-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-indigo-100 transition-colors">
@@ -104,9 +152,9 @@ export function Dashboard() {
       {/* Today's Tasks Preview */}
       <div className="mb-8">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Up Next</h2>
-          <button onClick={() => navigate('/tasks')} className="text-indigo-600 dark:text-indigo-400 text-sm font-medium flex items-center">
-            See all <ChevronRight className="w-4 h-4" />
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t.upNext}</h2>
+          <button onClick={() => navigate('/tasks')} className="text-indigo-600 dark:text-indigo-400 text-sm font-medium flex items-center gap-1">
+            {t.seeAll} <ChevronRight className={`w-4 h-4 ${language === 'ar' ? 'rotate-180' : ''}`} />
           </button>
         </div>
         <div className="space-y-3">
@@ -139,7 +187,7 @@ export function Dashboard() {
           ))}
           {todayTasks.filter(t => !t.completed).length === 0 && (
             <div className="text-center py-8 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 border-dashed">
-              <p className="text-slate-500 dark:text-slate-400">All caught up for today! 🎉</p>
+              <p className="text-slate-500 dark:text-slate-400">{t.allCaughtUp}</p>
             </div>
           )}
         </div>
@@ -148,9 +196,9 @@ export function Dashboard() {
       {/* Mini Leaderboard */}
       <div>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Leaderboard</h2>
-          <button onClick={() => navigate('/leaderboard')} className="text-indigo-600 dark:text-indigo-400 text-sm font-medium flex items-center">
-            View all <ChevronRight className="w-4 h-4" />
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t.leaderboard}</h2>
+          <button onClick={() => navigate('/leaderboard')} className="text-indigo-600 dark:text-indigo-400 text-sm font-medium flex items-center gap-1">
+            {t.viewAll} <ChevronRight className={`w-4 h-4 ${language === 'ar' ? 'rotate-180' : ''}`} />
           </button>
         </div>
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm space-y-4">
@@ -161,7 +209,7 @@ export function Dashboard() {
               <div className="flex-1">
                 <h4 className="font-semibold text-slate-900 dark:text-white">{friend.name}</h4>
                 <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <Flame className="w-3 h-3 text-amber-500" /> {friend.streak} day streak
+                  <Flame className="w-3 h-3 text-amber-500" /> {friend.streak} {t.dayStreak}
                 </div>
               </div>
               <div className="font-bold text-indigo-600 dark:text-indigo-400">{friend.points}</div>
