@@ -1,0 +1,5 @@
+{
+  "name": "TaskRival",
+  "description": "A gamified productivity app that combines daily task management, study tracking, streaks, and friend competition.",
+  "requestFramePermissions": []
+}
