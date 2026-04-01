@@ -42,8 +42,8 @@ export function Onboarding() {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col items-center justify-between p-6 max-w-md mx-auto relative overflow-hidden">
       {/* Decorative background elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl" />
+      <div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full pt-12 flex justify-center">
         <div className="flex items-center gap-2">
@@ -80,7 +80,7 @@ export function Onboarding() {
         </AnimatePresence>
       </div>
 
-      <div className="w-full pb-12 flex flex-col items-center gap-8">
+      <div className="w-full pb-12 flex flex-col items-center gap-8 relative z-10">
         <div className="flex gap-2">
           {slides.map((_, i) => (
             <div

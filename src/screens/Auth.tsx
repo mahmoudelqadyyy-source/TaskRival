@@ -24,7 +24,7 @@ export function Auth() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center p-6 max-w-md mx-auto relative overflow-hidden">
-      <div className="absolute top-[-20%] left-[-10%] w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl" />
+      <div className="absolute top-[-20%] left-[-10%] w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
       
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
