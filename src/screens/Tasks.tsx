@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, Circle, Plus, Trash2, Calendar, Clock, AlertCircle, Wand2, CheckSquare } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 import { translations } from '../lib/i18n';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, MouseSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { SortableTaskItem } from '../components/SortableTaskItem';
 
@@ -31,9 +31,15 @@ export function Tasks() {
   });
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: {
         distance: 5,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor, {

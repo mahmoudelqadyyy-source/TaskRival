@@ -45,7 +45,6 @@ export function SortableTaskItem({
     <motion.div 
       ref={setNodeRef}
       style={style}
-      layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
@@ -63,7 +62,7 @@ export function SortableTaskItem({
       <button 
         {...attributes} 
         {...listeners}
-        className="mt-1 flex-shrink-0 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing transition-colors ml-1"
+        className="mt-1 flex-shrink-0 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing transition-colors ml-1 touch-none"
       >
         <GripVertical className="w-5 h-5" />
       </button>

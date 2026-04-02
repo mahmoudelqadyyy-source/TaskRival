@@ -15,6 +15,7 @@ export function Tour() {
       // Small delay to ensure DOM is ready
       const timer = setTimeout(() => {
         setRun(true);
+        localStorage.setItem('hasSeenTour', 'true');
       }, 1000);
       return () => clearTimeout(timer);
     }
