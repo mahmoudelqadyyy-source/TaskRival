@@ -31,17 +31,24 @@ export function Auth() {
         email: firebaseUser.email,
         userId: firebaseUser.uid,
         goal: additionalData?.goal || 'Daily organization',
+        avatar: firebaseUser.photoURL || null,
         createdAt: new Date().toISOString()
       };
       await setDoc(userRef, userData);
     } else {
       userData = userSnap.data();
+      // Update avatar if it exists in Firebase Auth but not in our DB, or if it changed
+      if (firebaseUser.photoURL && userData.avatar !== firebaseUser.photoURL) {
+        userData.avatar = firebaseUser.photoURL;
+        await setDoc(userRef, { avatar: firebaseUser.photoURL }, { merge: true });
+      }
     }
     
     login({ 
       name: userData.name, 
       email: userData.email, 
       goal: userData.goal,
+      avatar: userData.avatar || undefined,
       id: firebaseUser.uid 
     });
     navigate('/');

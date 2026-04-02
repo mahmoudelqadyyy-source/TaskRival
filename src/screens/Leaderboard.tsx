@@ -13,6 +13,22 @@ export function Leaderboard() {
 
   const t = translations[language];
 
+  const handleAddFriend = () => {
+    if (!search.trim()) return;
+    
+    const newFriend = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: search,
+      points: Math.floor(Math.random() * 1000),
+      streak: Math.floor(Math.random() * 10),
+      completionRate: Math.floor(Math.random() * 50) + 50,
+      avatar: `https://i.pravatar.cc/150?u=${search}`
+    };
+    
+    useStore.getState().addFriend(newFriend);
+    setSearch('');
+  };
+
   if (!user) return null;
 
   const allUsers = [
@@ -37,10 +53,14 @@ export function Leaderboard() {
             placeholder={t.findFriends}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAddFriend()}
             className={`w-full py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm text-slate-900 dark:text-white shadow-sm ${language === 'ar' ? 'pr-9 pl-4' : 'pl-9 pr-4'}`}
           />
         </div>
-        <button className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center shadow-sm transition-all active:scale-95">
+        <button 
+          onClick={handleAddFriend}
+          className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center shadow-sm transition-all active:scale-95"
+        >
           <UserPlus className="w-5 h-5" />
         </button>
       </div>
@@ -65,6 +85,17 @@ export function Leaderboard() {
       </div>
 
       <div className="space-y-4 relative">
+        {friends.length === 0 && search === '' && (
+          <div className="text-center py-10">
+            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Users className="w-8 h-8 text-slate-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">It's quiet here</h3>
+            <p className="text-slate-500 dark:text-slate-400 max-w-[250px] mx-auto">
+              Add some friends to start competing and see who is the most productive!
+            </p>
+          </div>
+        )}
         <AnimatePresence>
           {sortedUsers
             .filter(u => u.name.toLowerCase().includes(search.toLowerCase()))

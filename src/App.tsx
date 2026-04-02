@@ -47,6 +47,7 @@ export default function App() {
                 name: userData.name,
                 email: userData.email,
                 goal: userData.goal,
+                avatar: userData.avatar || user.photoURL || undefined,
                 id: user.uid
               });
             }

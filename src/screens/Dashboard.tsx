@@ -96,7 +96,7 @@ export function Dashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors group"
+          className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors group tour-store"
         >
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">

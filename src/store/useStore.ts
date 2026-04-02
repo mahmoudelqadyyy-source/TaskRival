@@ -111,6 +111,7 @@ interface AppState {
   activeItems: string[];
   buyItem: (id: string, cost: number) => boolean;
   toggleItemActive: (id: string) => void;
+  addFriend: (friend: Friend) => void;
 }
 
 const initialTasks: Task[] = [
@@ -157,11 +158,7 @@ const initialTeamChallenges: TeamChallenge[] = [
   { id: 'tc2', name: 'Task Terminators', description: 'Complete 500 tasks together', target: 500, progress: 312, reward: 2000, participants: ['f1', 'f3', 'me'], joined: true },
 ];
 
-const initialFriends: Friend[] = [
-  { id: 'f1', name: 'Alex Chen', points: 4200, streak: 12, completionRate: 85, avatar: 'https://i.pravatar.cc/150?u=alex' },
-  { id: 'f2', name: 'Sarah Miller', points: 3850, streak: 8, completionRate: 78, avatar: 'https://i.pravatar.cc/150?u=sarah' },
-  { id: 'f3', name: 'Jordan Lee', points: 5100, streak: 21, completionRate: 92, avatar: 'https://i.pravatar.cc/150?u=jordan' },
-];
+const initialFriends: Friend[] = [];
 
 const initialAchievements: Achievement[] = [
   { id: 'a1', name: 'First Step', description: 'Completed your first task', unlocked: true, icon: 'target' },
@@ -170,15 +167,11 @@ const initialAchievements: Achievement[] = [
   { id: 'a4', name: 'Task Master', description: 'Completed 100 tasks', unlocked: false, icon: 'award' },
 ];
 
-const initialNotifications: AppNotification[] = [
-  { id: 'n1', title: 'Alex Chen is on fire! 🔥', message: 'Alex just hit a 12-day streak. Send a high five!', type: 'social', read: false, createdAt: new Date().toISOString() },
-  { id: 'n2', title: 'Team Challenge Update', message: 'Your team is 80% done with "Task Terminators". Keep it up!', type: 'system', read: false, createdAt: new Date(Date.now() - 3600000).toISOString(), actionUrl: '/challenges' },
-  { id: 'n3', title: 'Daily Reminder', message: 'You have 2 tasks left for today. You can do it!', type: 'reminder', read: true, createdAt: new Date(Date.now() - 86400000).toISOString(), actionUrl: '/tasks' },
-];
+const initialNotifications: AppNotification[] = [];
 
 export const useStore = create<AppState>((set, get) => ({
   user: null,
-  tasks: initialTasks,
+  tasks: [],
   challenges: initialChallenges,
   teamChallenges: initialTeamChallenges,
   friends: initialFriends,
@@ -188,14 +181,14 @@ export const useStore = create<AppState>((set, get) => ({
 
   login: (userData) => set((state) => ({
     user: {
-      id: 'u1',
+      id: userData.id || 'u1',
       name: userData.name || 'User',
       email: userData.email || 'user@example.com',
-      points: 1250,
-      streak: 4,
-      level: 3,
+      points: 0,
+      streak: 0,
+      level: 1,
       goal: userData.goal || 'Daily organization',
-      avatar: 'https://i.pravatar.cc/150?u=me',
+      avatar: userData.avatar || 'https://i.pravatar.cc/150?u=me',
       onboarded: true,
       ...userData,
     } as User
@@ -433,4 +426,8 @@ export const useStore = create<AppState>((set, get) => ({
       user: newUser
     };
   }),
+
+  addFriend: (friend) => set((state) => ({
+    friends: [...state.friends, friend]
+  })),
 }));
