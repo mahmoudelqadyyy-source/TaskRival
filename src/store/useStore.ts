@@ -17,6 +17,7 @@ export interface Task {
   date: string; // ISO string
   recurring: Recurring;
   subtasks?: { id: string; title: string; completed: boolean }[];
+  order?: number;
 }
 
 export interface User {
@@ -95,6 +96,7 @@ interface AppState {
   setLanguage: (lang: Language) => void;
   setTasks: (tasks: Task[]) => void;
   addTask: (task: Omit<Task, 'id' | 'completed'>) => void;
+  reorderTasks: (startIndex: number, endIndex: number) => void;
   toggleTask: (id: string) => void;
   deleteTask: (id: string) => void;
   joinChallenge: (id: string) => void;
@@ -205,14 +207,48 @@ export const useStore = create<AppState>((set, get) => ({
   setTasks: (tasks) => set({ tasks }),
 
   addTask: (task) => {
-    const newTask = { ...task, id: Math.random().toString(36).substr(2, 9), completed: false };
-    set((state) => ({
-      tasks: [...state.tasks, newTask]
-    }));
-    
-    if (isFirebaseConfigured && auth.currentUser) {
-      setDoc(doc(db, 'users', auth.currentUser.uid, 'tasks', newTask.id), newTask).catch(console.error);
-    }
+    set((state) => {
+      const maxOrder = state.tasks.reduce((max, t) => Math.max(max, t.order || 0), -1);
+      const newTask = { ...task, id: Math.random().toString(36).substr(2, 9), completed: false, order: maxOrder + 1 };
+      
+      if (isFirebaseConfigured && auth.currentUser) {
+        setDoc(doc(db, 'users', auth.currentUser.uid, 'tasks', newTask.id), newTask).catch(console.error);
+      }
+      
+      return {
+        tasks: [...state.tasks, newTask]
+      };
+    });
+  },
+
+  reorderTasks: (startIndex, endIndex) => {
+    set((state) => {
+      // Get only the pending tasks (the ones we are reordering) and sort them by order
+      const pendingTasks = state.tasks.filter(t => !t.completed).sort((a, b) => (a.order || 0) - (b.order || 0));
+      const completedTasks = state.tasks.filter(t => t.completed);
+      
+      const [removed] = pendingTasks.splice(startIndex, 1);
+      pendingTasks.splice(endIndex, 0, removed);
+      
+      // Assign order values
+      pendingTasks.forEach((task, index) => {
+        task.order = index;
+      });
+      
+      // Re-combine pending and completed tasks
+      const reorderedTasks = [...pendingTasks, ...completedTasks];
+      
+      // Update Firebase if configured
+      if (isFirebaseConfigured && auth.currentUser) {
+        pendingTasks.forEach((task) => {
+          updateDoc(doc(db, 'users', auth.currentUser!.uid, 'tasks', task.id), {
+            order: task.order
+          }).catch(console.error);
+        });
+      }
+      
+      return { tasks: reorderedTasks };
+    });
   },
 
   toggleTask: (id) => {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../store/useStore';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, Flame, UserPlus, Search, Crown } from 'lucide-react';
+import { Trophy, Flame, UserPlus, Search, Crown, Users } from 'lucide-react';
 import { translations } from '../lib/i18n';
 
 export function Leaderboard() {
