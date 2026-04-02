@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { addDays, format, isSameDay, startOfDay } from 'date-fns';
+import { auth, db, isFirebaseConfigured } from '../firebase';
+import { doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 
 export type Priority = 'low' | 'medium' | 'high';
 export type Recurring = 'none' | 'daily' | 'weekly' | 'custom';
@@ -91,6 +93,7 @@ interface AppState {
   logout: () => void;
   completeOnboarding: () => void;
   setLanguage: (lang: Language) => void;
+  setTasks: (tasks: Task[]) => void;
   addTask: (task: Omit<Task, 'id' | 'completed'>) => void;
   toggleTask: (id: string) => void;
   deleteTask: (id: string) => void;
@@ -206,43 +209,73 @@ export const useStore = create<AppState>((set, get) => ({
 
   setLanguage: (lang) => set({ language: lang }),
 
-  addTask: (task) => set((state) => ({
-    tasks: [...state.tasks, { ...task, id: Math.random().toString(36).substr(2, 9), completed: false }]
-  })),
+  setTasks: (tasks) => set({ tasks }),
 
-  toggleTask: (id) => set((state) => {
-    const newTasks = state.tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
-    const task = state.tasks.find(t => t.id === id);
-    let pointsToAdd = 0;
+  addTask: (task) => {
+    const newTask = { ...task, id: Math.random().toString(36).substr(2, 9), completed: false };
+    set((state) => ({
+      tasks: [...state.tasks, newTask]
+    }));
     
-    // Check if task is being completed
-    if (task && !task.completed) {
-      const isDoublePoints = state.activeItems.includes('i4');
-      pointsToAdd = isDoublePoints ? 100 : 50; // 50 points per task, 100 if double points active
-      
-      // Add a smart notification for completing a task
-      setTimeout(() => {
-        get().addNotification({
-          title: 'Task Completed! 🎉',
-          message: `You earned ${pointsToAdd} points for completing "${task.title}". Keep the momentum going!`,
-          type: 'system',
-          actionUrl: '/store'
-        });
-      }, 1000);
-    } else if (task && task.completed) {
-      const isDoublePoints = state.activeItems.includes('i4');
-      pointsToAdd = isDoublePoints ? -100 : -50;
+    if (isFirebaseConfigured && auth.currentUser) {
+      setDoc(doc(db, 'users', auth.currentUser.uid, 'tasks', newTask.id), newTask).catch(console.error);
     }
-    
-    return {
-      tasks: newTasks,
-      user: state.user ? { ...state.user, points: Math.max(0, state.user.points + pointsToAdd) } : null
-    };
-  }),
+  },
 
-  deleteTask: (id) => set((state) => ({
-    tasks: state.tasks.filter(t => t.id !== id)
-  })),
+  toggleTask: (id) => {
+    let updatedTask: Task | undefined;
+    
+    set((state) => {
+      const newTasks = state.tasks.map(t => {
+        if (t.id === id) {
+          updatedTask = { ...t, completed: !t.completed };
+          return updatedTask;
+        }
+        return t;
+      });
+      
+      const task = state.tasks.find(t => t.id === id);
+      let pointsToAdd = 0;
+      
+      // Check if task is being completed
+      if (task && !task.completed) {
+        const isDoublePoints = state.activeItems.includes('i4');
+        pointsToAdd = isDoublePoints ? 100 : 50; // 50 points per task, 100 if double points active
+        
+        // Add a smart notification for completing a task
+        setTimeout(() => {
+          get().addNotification({
+            title: 'Task Completed! 🎉',
+            message: `You earned ${pointsToAdd} points for completing "${task.title}". Keep the momentum going!`,
+            type: 'system',
+            actionUrl: '/store'
+          });
+        }, 1000);
+      } else if (task && task.completed) {
+        const isDoublePoints = state.activeItems.includes('i4');
+        pointsToAdd = isDoublePoints ? -100 : -50;
+      }
+      
+      return {
+        tasks: newTasks,
+        user: state.user ? { ...state.user, points: Math.max(0, state.user.points + pointsToAdd) } : null
+      };
+    });
+    
+    if (updatedTask && isFirebaseConfigured && auth.currentUser) {
+      updateDoc(doc(db, 'users', auth.currentUser.uid, 'tasks', id), { completed: updatedTask.completed }).catch(console.error);
+    }
+  },
+
+  deleteTask: (id) => {
+    set((state) => ({
+      tasks: state.tasks.filter(t => t.id !== id)
+    }));
+    
+    if (isFirebaseConfigured && auth.currentUser) {
+      deleteDoc(doc(db, 'users', auth.currentUser.uid, 'tasks', id)).catch(console.error);
+    }
+  },
 
   joinChallenge: (id) => set((state) => ({
     challenges: state.challenges.map(c => c.id === id ? { ...c, joined: true } : c)

@@ -17,9 +17,13 @@ import { Profile } from './screens/Profile';
 import { Achievements } from './screens/Achievements';
 import { Store } from './screens/Store';
 import { Focus } from './screens/Focus';
+import { auth, db, isFirebaseConfigured } from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { collection, onSnapshot, query } from 'firebase/firestore';
 
 export default function App() {
   const activeItems = useStore(state => state.activeItems);
+  const setTasks = useStore(state => state.setTasks);
 
   useEffect(() => {
     if (activeItems.includes('i1')) {
@@ -28,6 +32,48 @@ export default function App() {
       document.body.classList.remove('theme-neon');
     }
   }, [activeItems]);
+
+  useEffect(() => {
+    if (!isFirebaseConfigured) return;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // Fetch user data
+        import('firebase/firestore').then(({ doc, getDoc }) => {
+          getDoc(doc(db, 'users', user.uid)).then(userSnap => {
+            if (userSnap.exists()) {
+              const userData = userSnap.data();
+              useStore.getState().login({
+                name: userData.name,
+                email: userData.email,
+                goal: userData.goal,
+                id: user.uid
+              });
+            }
+          });
+        });
+
+        // Listen to tasks
+        const q = query(collection(db, 'users', user.uid, 'tasks'));
+        const unsubscribeTasks = onSnapshot(q, (snapshot) => {
+          const tasksData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as any[];
+          setTasks(tasksData);
+        }, (error) => {
+          console.error("Error fetching tasks:", error);
+        });
+
+        return () => unsubscribeTasks();
+      } else {
+        setTasks([]);
+        useStore.getState().logout();
+      }
+    });
+
+    return () => unsubscribeAuth();
+  }, [setTasks]);
 
   return (
     <BrowserRouter>
