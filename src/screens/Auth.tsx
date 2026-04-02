@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { Mail, Lock, User, ArrowRight, Github } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Github, AlertTriangle } from 'lucide-react';
 import { motion } from 'motion/react';
+import { auth, db, isFirebaseConfigured } from '../firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 export function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -10,14 +13,81 @@ export function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [goal, setGoal] = useState('Daily organization');
+  const [error, setError] = useState('');
   
   const login = useStore(state => state.login);
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    login({ name: isLogin ? 'Demo User' : name, email, goal });
+  const handleFirebaseUser = async (firebaseUser: any, additionalData?: any) => {
+    if (!isFirebaseConfigured) return;
+    
+    const userRef = doc(db, 'users', firebaseUser.uid);
+    const userSnap = await getDoc(userRef);
+    
+    let userData;
+    if (!userSnap.exists()) {
+      userData = {
+        name: additionalData?.name || firebaseUser.displayName || 'User',
+        email: firebaseUser.email,
+        userId: firebaseUser.uid,
+        goal: additionalData?.goal || 'Daily organization',
+        createdAt: new Date().toISOString()
+      };
+      await setDoc(userRef, userData);
+    } else {
+      userData = userSnap.data();
+    }
+    
+    login({ 
+      name: userData.name, 
+      email: userData.email, 
+      goal: userData.goal,
+      id: firebaseUser.uid 
+    });
     navigate('/');
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    
+    if (!isFirebaseConfigured) {
+      // Fallback for demo mode
+      login({ name: isLogin ? 'Demo User' : name, email, goal });
+      navigate('/');
+      return;
+    }
+    
+    try {
+      if (isLogin) {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        await handleFirebaseUser(userCredential.user);
+      } else {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await handleFirebaseUser(userCredential.user, { name, goal });
+      }
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError('');
+    
+    if (!isFirebaseConfigured) {
+      // Fallback for demo mode
+      login({ name: 'Google User', email: 'google@example.com', goal: 'Daily organization' });
+      navigate('/');
+      return;
+    }
+    
+    const provider = new GoogleAuthProvider();
+    try {
+      const userCredential = await signInWithPopup(auth, provider);
+      await handleFirebaseUser(userCredential.user);
+    } catch (err: any) {
+      setError(err.message);
+    }
   };
 
   const goals = ['Studying', 'Daily organization', 'Habit building', 'Competitive challenges'];
@@ -39,6 +109,22 @@ export function Auth() {
             {isLogin ? 'Enter your details to access your tasks.' : 'Start your journey to better productivity.'}
           </p>
         </div>
+
+        {!isFirebaseConfigured && (
+          <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-amber-800 dark:text-amber-300">
+              <p className="font-semibold mb-1">Demo Mode Active</p>
+              <p>Firebase is not configured. You can still test the app, but data won't be saved to the cloud. Add your Firebase config to the .env file to enable real authentication.</p>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-4 p-3 bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 rounded-xl text-sm text-center">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {!isLogin && (
@@ -118,10 +204,7 @@ export function Auth() {
 
         <button
           type="button"
-          onClick={() => {
-            login({ name: 'Google User', email: 'google@example.com' });
-            navigate('/');
-          }}
+          onClick={handleGoogleSignIn}
           className="w-full py-4 mt-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-2xl font-semibold flex items-center justify-center gap-3 transition-all shadow-sm"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
